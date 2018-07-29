@@ -208,7 +208,7 @@ defmodule Jamdb.Oracle.Protocol do
       {:ok, [{_, columns, _, rows}]} ->
         {:ok, %Result{num_rows: length(rows), rows: rows, columns: columns}, state}
       {:ok, [{_, 0, rows}]} -> {:ok, %Result{num_rows: length(rows), rows: rows}, state}
-      {:ok, [{_, code, msg}]} -> {:error, %Error{ora_code: code, message: msg}, state}
+      {:ok, [{_, code, msg}]} -> {:error, %Error{code: code, message: msg}, state}
       {:ok, [{_, num_rows}]} -> {:ok, %Result{num_rows: num_rows, rows: nil}, state}
       {:ok, result} -> {:ok, result, state}
       {:error, _, err} -> {:error, err, state}
