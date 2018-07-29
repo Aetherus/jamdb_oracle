@@ -12,14 +12,14 @@ defmodule Ecto.Adapters.Jamdb.Oracle.Connection do
   def execute(conn, %Jamdb.Oracle.Query{} = query, params, opts) do
     case DBConnection.prepare_execute(conn, query, params, opts) do
       {:ok, _, result} -> {:ok, result}
-      {:error, err} -> error!(err)
+      {:error, err} -> raise err
     end
   end
   def execute(conn, statement, params, opts) do
     query = %Jamdb.Oracle.Query{statement: statement}
     case DBConnection.prepare_execute(conn, query, params, opts) do
       {:ok, _, result} -> {:ok, result}
-      {:error, err} -> error!(err)
+      {:error, err} -> raise err
     end
   end
 
@@ -27,7 +27,7 @@ defmodule Ecto.Adapters.Jamdb.Oracle.Connection do
     query = %Jamdb.Oracle.Query{statement: statement}
     case DBConnection.prepare_execute(conn, query, params, opts) do
       {:ok, _, _} = ok -> ok
-      {:error, err} -> error!(err)
+      {:error, err} -> raise err
     end
   end
     
@@ -45,10 +45,6 @@ defmodule Ecto.Adapters.Jamdb.Oracle.Connection do
 
   def to_constraints(_err), do: []
   
-  def execute_ddl(err), do: error!(err)
-
-  defp error!(msg) do
-    raise DBConnection.ConnectionError, "#{inspect msg}"
-  end
+  def execute_ddl(err), do: raise %Jamdb.Oracle.Error{message: to_string(err)}
   
 end
