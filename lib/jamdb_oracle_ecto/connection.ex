@@ -4,30 +4,43 @@ defmodule Ecto.Adapters.Jamdb.Oracle.Connection do
   @behaviour Ecto.Adapters.SQL.Connection
   
   alias Ecto.Adapters.Jamdb.Oracle.Query
-  
+  alias Jamdb.Oracle.Error
+
   def child_spec(opts) do
     DBConnection.child_spec(Jamdb.Oracle.Protocol, opts)
   end
   
   def execute(conn, %Jamdb.Oracle.Query{} = query, params, opts) do
     case DBConnection.prepare_execute(conn, query, params, opts) do
-      {:ok, _, result} -> {:ok, result}
-      {:error, err} -> raise err
+        {:ok, _, result}  ->
+          {:ok, result}
+        {:error, %Error{}} = error ->
+          error
+        {:error, err} ->
+          raise err
     end
   end
   def execute(conn, statement, params, opts) do
     query = %Jamdb.Oracle.Query{statement: statement}
     case DBConnection.prepare_execute(conn, query, params, opts) do
-      {:ok, _, result} -> {:ok, result}
-      {:error, err} -> raise err
+        {:ok, _, result}  ->
+          {:ok, result}
+        {:error, %Error{}} = error ->
+          error
+        {:error, err} ->
+          raise err
     end
   end
 
   def prepare_execute(conn, _name, statement, params, opts) do
     query = %Jamdb.Oracle.Query{statement: statement}
     case DBConnection.prepare_execute(conn, query, params, opts) do
-      {:ok, _, _} = ok -> ok
-      {:error, err} -> raise err
+      {:ok, _, _} = ok ->
+        ok
+      {:error, %Error{}} = error ->
+        error
+      {:error, err} ->
+        raise err
     end
   end
     
@@ -45,6 +58,6 @@ defmodule Ecto.Adapters.Jamdb.Oracle.Connection do
 
   def to_constraints(_err), do: []
   
-  def execute_ddl(err), do: raise %Jamdb.Oracle.Error{message: to_string(err)}
+  def execute_ddl(err), do: raise %Error{message: "not implemented"}
   
 end
