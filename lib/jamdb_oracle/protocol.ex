@@ -7,6 +7,7 @@ defmodule Jamdb.Oracle.Protocol do
 
   alias Jamdb.Oracle.Query
   alias Jamdb.Oracle.Result
+  alias Jamdb.Oracle.Cursor
   alias Jamdb.Oracle.Error
 
   defstruct [pid: nil, ora: :idle, conn_opts: []]
@@ -29,7 +30,7 @@ defmodule Jamdb.Oracle.Protocol do
   @type query :: Query.t
   @type params :: [any]
   @type result :: Result.t
-  @type cursor :: any
+  @type cursor :: Cursor.t
 
   @doc false
   @spec connect(opts :: Keyword.t) :: {:ok, state}
@@ -222,7 +223,42 @@ defmodule Jamdb.Oracle.Protocol do
       error -> error
     end
   end
-  
+
+  @doc false
+  @spec handle_declare(query, params, opts :: Keyword.t, state) ::
+    {:ok, cursor, state} |
+    {:error | :disconnect, Exception.t, state}
+  def handle_declare(_query, params, _opts, state) do
+    {:ok, %Cursor{params: params}, state}
+  end
+
+  @doc false
+  @spec handle_first(query, cursor, opts :: Keyword.t, state) ::
+    {:ok | :deallocate, result, state} |
+    {:error | :disconnect, Exception.t, state}
+  def handle_first(query, %Cursor{params: params}, opts, state) do
+    case handle_execute(query, params, opts, state) do
+      {:ok, result, state} -> {:deallocate, result, state}
+      error -> error
+    end
+  end
+
+  @doc false
+  @spec handle_next(query, cursor, opts :: Keyword.t, state) ::
+    {:ok | :deallocate, result, state} |
+    {:error | :disconnect, Exception.t, state}
+  def handle_next(_query, _cursor, _opts, state) do
+    {:ok, %Result{}, state}
+  end
+
+  @doc false
+  @spec handle_deallocate(query, cursor, opts :: Keyword.t, state) ::
+    {:ok, result, state} |
+    {:error | :disconnect, Exception.t, state}
+  def handle_deallocate(_query, _cursor, _opts, state) do
+    {:ok, %Result{}, state}
+  end
+
   @doc false
   @spec handle_close(query, opts :: Keyword.t, state) ::
     {:ok, result, state} |
@@ -240,32 +276,4 @@ defmodule Jamdb.Oracle.Protocol do
     end
   end
 
-  # @spec handle_declare(query, params, opts :: Keyword.t, state) ::
-  #   {:ok, cursor, state} |
-  #   {:error | :disconnect, Exception.t, state}
-  # def handle_declare(_query, _params, _opts, state) do
-  #   {:error, "not implemented", state}
-  # end
-  #
-  # @spec handle_first(query, cursor, opts :: Keyword.t, state) ::
-  #   {:ok | :deallocate, result, state} |
-  #   {:error | :disconnect, Exception.t, state}
-  # def handle_first(_query, _cursor, _opts, state) do
-  #   {:error, "not implemented", state}
-  # end
-  #
-  # @spec handle_next(query, cursor, opts :: Keyword.t, state) ::
-  #   {:ok | :deallocate, result, state} |
-  #   {:error | :disconnect, Exception.t, state}
-  # def handle_next(_query, _cursor, _opts, state) do
-  #   {:error, "not implemented", state}
-  # end
-  #
-  # @spec handle_deallocate(query, cursor, opts :: Keyword.t, state) ::
-  #   {:ok, result, state} |
-  #   {:error | :disconnect, Exception.t, state}
-  # def handle_deallocate(_query, _cursor, _opts, state) do
-  #   {:error, "not implemented", state}
-  # end
-  #
 end
