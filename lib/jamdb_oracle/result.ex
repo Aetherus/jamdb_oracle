@@ -14,3 +14,21 @@ defmodule Jamdb.Oracle.Result do
 
   defstruct [columns: nil, rows: nil, num_rows: :undefined]
 end
+
+defmodule Jamdb.Oracle.Cursor do
+  @moduledoc """
+  Cursor struct used for query. Its fields are:
+    * `cursor` - The cursor id;
+    * `params` - The parameters as given to query;
+    * `row_format` - The row format data;
+    * `last_row` - The last row of fetched data;
+  """
+  
+  @type t :: %__MODULE__{
+    cursor:  integer | nil,
+    params: any,
+    row_format: any,
+    last_row: any}
+
+  defstruct [cursor: nil, params: nil, row_format: nil, last_row: nil]
+end
