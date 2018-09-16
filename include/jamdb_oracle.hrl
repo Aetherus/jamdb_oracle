@@ -30,6 +30,7 @@
     timeout,
     auth,
     fetch,
+    sdu,
     server,
     cursors,
     defcols,
@@ -58,11 +59,6 @@
     data_scale,
     charset
 }).
-
--define(IS_PACKET_SIZE(PacketSize),
-    PacketSize =:= 8155;
-    PacketSize =:= 8111
-).
 
 -define(IS_FIXED_TYPE(DataType),
     ?IS_NUMBER_TYPE(DataType);
@@ -130,20 +126,20 @@
 -define(AL32UTF8_CHARSET, 873).
 -define(AL16UTF16_CHARSET, 2000).
 
-%-define(CHARSET, [
-%    {we8iso8859p1, 31},
-%    {ee8iso8859p2, 32},
-%    {cl8iso8859p5, 35},
-%    {ee8mswin1250, 170},
-%    {cl8mswin1251, 171},
-%    {we8mswin1252, 178},
-%    {ja16euc, 830},
-%    {zhs16gbk, 852},
-%    {zht16big5, 865},
-%    {zht16mswin950, 867},
-%    {al32utf8, 873},
-%    {al16utf16, 2000}
-%]).
+-define(CHARSET, [
+    {we8iso8859p1, 31},
+    {ee8iso8859p2, 32},
+    {cl8iso8859p5, 35},
+    {ee8mswin1250, 170},
+    {cl8mswin1251, 171},
+    {we8mswin1252, 178},
+    {ja16euc, 830},
+    {zhs16gbk, 852},
+    {zht16big5, 865},
+    {zht16mswin950, 867},
+    {al32utf8, 873},
+    {al16utf16, 2000}
+]).
 
 -define(ZONEIDMAP, [
     {100, "America/New_York"},
