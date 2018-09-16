@@ -1,7 +1,7 @@
 -module(jamdb_oracle_tns_encoder).
 
 %% API
--export([encode_packet/2]).
+-export([encode_packet/3]).
 -export([encode_record/2]).
 -export([encode_token/2]).
 -export([encode_helper/2]).
@@ -9,16 +9,17 @@
 -include("jamdb_oracle.hrl").
 
 %% API
-encode_packet(?TNS_DATA, Data) ->
-    Length = byte_size(Data) + 10,
+encode_packet(?TNS_DATA, Data, Length) ->
+    PacketSize = byte_size(Data) + 10,
+    BodySize = Length - 10,
     case Data of
-        <<PacketBody:8182/binary, Rest/bits>> when Length > 8192 ->
-            {<<32:8, 0:8, 0:16, ?TNS_DATA:8, 0:8, 0:16, 0:8, 32:8, PacketBody/binary>>, Rest};
-        _ ->  {<<Length:16, 0:16, ?TNS_DATA:8, 0:8, 0:16, 0:16, Data/binary>>, <<>>}
+        <<PacketBody:BodySize/binary, Rest/bits>> when PacketSize > Length ->
+            {<<Length:16, 0:16, ?TNS_DATA:8, 0:8, 0:16, 0:8, 32:8, PacketBody/binary>>, Rest};
+        _ ->  {<<PacketSize:16, 0:16, ?TNS_DATA:8, 0:8, 0:16, 0:16, Data/binary>>, <<>>}
     end;
-encode_packet(Type, Data) ->
-    Length = byte_size(Data) + 8,
-    {<<Length:16, 0:16, Type:8, 0:8, 0:16, Data/binary>>, <<>>}.
+encode_packet(Type, Data, _Length) ->
+    PacketSize = byte_size(Data) + 8,
+    {<<PacketSize:16, 0:16, Type:8, 0:8, 0:16, Data/binary>>, <<>>}.
 
 encode_record(description, EnvOpts) ->
     {ok, UserHost}  = inet:gethostname(),
@@ -39,13 +40,13 @@ encode_record(description, EnvOpts) ->
                [] -> "TCP";
                 _ -> "TCPS" end ++
     ")(HOST="++Host++")(PORT="++integer_to_list(Port)++")))");
-encode_record(login, #oraclient{env=EnvOpts}) ->
+encode_record(login, #oraclient{env=EnvOpts,sdu=Sdu}) ->
     Data = encode_record(description, EnvOpts),
     <<
     1,57,		  % Packet version number
     1,57,		  % Lowest compatible version number
     0,0,		  % Global service options supported
-    32,0,		  % SDU 8192
+    Sdu:16,		  % SDU
     255,255,		  % TDU
     79,152,		  % Protocol Characteristics
     0,0,		  % Max packets before ACK
@@ -108,11 +109,12 @@ encode_record(auth, #oraclient{env=EnvOpts,req={Sess, Salt, DerivedSalt},seq=Tse
     (encode_keyval(<<"AUTH_SESSKEY">>, AuthSess, 1))/binary
     >>,
     KeyConn};
-encode_record(dty, _EnvOpts) ->
+encode_record(dty, #oraclient{req=Request}) ->
+    Charset = proplists:get_value(Request, ?CHARSET, ?UTF8_CHARSET),
     <<
     ?TTI_DTY,
-    (encode_ub2(?UTF8_CHARSET))/binary,	%cli in charset
-    (encode_ub2(?UTF8_CHARSET))/binary,	%cli out charset
+    (encode_ub2(Charset))/binary,	%cli in charset
+    (encode_ub2(Charset))/binary,	%cli out charset
     1,
     38,6,1,0,0,106,1,1,6,1,1,1,1,1,1,0,41,144,3,7,3,0,1,0,79,1,55,4,0,0,0,0,12,0,0,6,0,1,1,
     7,2,0,0,0,0,0,0,
